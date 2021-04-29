@@ -2,6 +2,21 @@ import re
 import math
 import random
 
+def ipow(*args):
+    return int(pow(*args))
+
+
+def load_primes(files=['primes/primes1.txt']):
+    primes = []
+    for fname in files:
+        s = open(fname).read()
+        s = s.split('edu')[1]
+        primes_str = re.findall(r'(\d+)', s)
+        primes.extend(map(int, primes_str))
+    return primes[500_000:]
+
+PRIMES = load_primes()
+
 
 def gcd(a, b):
     a, b = max(a,b), min(a,b)
@@ -49,16 +64,16 @@ def fast_mod_exp(base, e, mod):
 
 
 # MathStackExchange
-def is_perfect_power(n):
+def is_perfect_power(n: int):
     bmax = iceil(math.log2(n))
     for n_root in range(2, bmax+1):
         root = pow(n , 1/n_root)
         down, up = math.floor(root), math.ceil(root)
-        if fast_exp(down, n_root) == n:
-            return {'n_root': down, 'n': n_root}
-        elif fast_exp(up, n_root) == n:
-            return {'n_root': up, 'n': n_root}
-    return {'n_root': -1, 'n': -1}
+        if ipow(down, n_root) == n:
+            return True
+        elif ipow(up, n_root) == n:
+            return True
+    return False
 
 
 def powers_of_two_divisors(n):
@@ -67,13 +82,23 @@ def powers_of_two_divisors(n):
         """
     if n & 1:
         raise ValueError(f"`n` must be even. Got n={n}")
-    cands = []
     t = 1
-    while n and iceil(n / 2) == ifloor( n / 2 ):
-        cands.append(t)
+    while not n & 1:
         t += 1
-        n //= 2
+        n >>= 1
     return range(1, t)
+
+
+def gt_powers_of_two_divisor(n):
+    """Generates iterator from 1 to k such that k is the biggest
+        integer satisfying n % (2^k) = 0.
+        """
+
+    t = 1
+    while not n & 1:
+        t += 1
+        n >>= 1
+    return t
 
 
 # Implementation of pseudocode at [4]
@@ -84,11 +109,11 @@ def is_witness(a: int, n: int):
         )
     
     t = random.choice(powers_of_two_divisors(n-1))
-    u = (n - 1) // fast_exp(2, t)
-    x0 = fast_mod_exp(a, u, n)
+    u = (n - 1) // ipow(2, t)
+    x0 = ipow(a, u, n)
     
     for i in range(1, t+1):
-        x1 = fast_mod_exp(x0, 2, n)
+        x1 = ipow(x0, 2, n)
         
         if x1 == 1 and x0 != 1 and x0 != n - 1:
             return True
@@ -100,15 +125,6 @@ def is_witness(a: int, n: int):
     return False
 
 
-def load_primes(files=['primes/primes1.txt']):
-    primes = []
-    for fname in files:
-        s = open(fname).read()
-        s = s.split('edu')[1]
-        primes_str = re.findall(r'(\d+)', s)
-        primes.extend(map(int, primes_str))
-    return primes
-
 
 # Implementation of pseudocode at [4]
 def miller_rabin(n: int, s: int):
@@ -118,11 +134,13 @@ def miller_rabin(n: int, s: int):
         )
     """Miller-Rabin algorithm.
     """
-    for j in range(1, s+1):
+    for _ in range(s):
         a = random.randint(1, n-1)
         if is_witness(a, n):
-            return 'composite'
-    return 'prime'
+            return False
+            # return 'composite'
+    return True
+    # return 'prime'
 
 
 # [7]
@@ -160,13 +178,14 @@ def modInverse(a, m):
 
 
 def gen_n_bits_prime(n: int, s: int = 200):
-    mi = fast_exp(2, n-1) + 1
-    ma = fast_exp(2, n) - 1
-    
+    mask = (1 << n - 1) | 1
+
     while True:
-        # Check only for odd number
-        candidate = random.randrange(mi, ma, 2)
-        if miller_rabin(candidate, s) == 'prime':
+        # Check only for odd number AND effectively
+        # has `n` bits
+        candidate = random.getrandbits(n) | mask
+        # print("another try..",)
+        if miller_rabin(candidate, s):
             return candidate
 
 
@@ -184,5 +203,27 @@ def GenModulus(n: int, miller_rabin_tries=200):
     q = gen_n_bits_prime(n, miller_rabin_tries)
     N = p * q
     return (N, p, q)
+
+
+def GenRSA(n: int, tries=200, dictionary={}):
+    N, p, q = GenModulus(n, tries)
+    phi_n = (p - 1) * (q - 1)
+
+    e = random.randint(5000, 500_000)
+    # e = random.choice(PRIMES)
+    while gcd(e, phi_n) > 1:
+        e = random.randint(5000, 500_000)
+        print(e, phi_n)
+        input()
+    d = modInverse(e, phi_n)
+
+
+    dictionary['n'] = N
+    dictionary['e'] = e
+    dictionary['d'] = d
+    dictionary['p'] = p
+    dictionary['q'] = q
+
+    return N, e, d
 
 
