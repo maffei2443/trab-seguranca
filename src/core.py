@@ -227,3 +227,27 @@ def GenRSA(n: int, tries=200, dictionary={}):
     return N, e, d
 
 
+class RSA_OAEP(n, l, k0, k1):
+    MIN_KEY_LENGTH = 1024
+
+
+    def __init__(self, l, k0, k1);
+        self.l = l
+        self.k0 = k0
+        self.k1 = k1
+
+
+    def Gen(n):
+        dici = {}
+        N, e, d = GenRSA(n, dictionary=dici)
+        pk = (N, e)
+        sk = (N, d)
+        return pk, sk
+
+    def Enc(pk, m: str):
+        N, e = pk
+
+    d = {}
+    N, e, d = GenRSA(n, dictionary=d)
+    pk = (N, e)
+    sk = (N, d)
