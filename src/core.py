@@ -227,14 +227,69 @@ def GenRSA(n: int, tries=200, dictionary={}):
     return N, e, d
 
 
-class RSA_OAEP(n, l, k0, k1):
+def padded_bin_rep(n: int, pad = 8):
+    n_rep = bin(n)[2:]
+    dt = pad - iceil(math.log2(int(f'0b{n_rep}', 2)))
+    return dt*'0' + str(n_rep)
+
+
+def pad_message(m: str, max_len: int = 128):
+    delta = max_len - len(m)
+    if delta < 0:
+         raise ValueError(
+            f"`m` must have length less than or equal {max_len}"
+        )  
+    else:
+        return m + delta * chr(0)
+
+
+def XOR_str(s1: str, s2: str):
+    """Implements s1 ^ s2, padding to the left the smaller string.
+
+    Args:
+        s1 (str): [description]
+        s2 (str): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    s1 = s1[::-1].encode('ascii')
+    s2 = s2[::-1].encode('ascii')
+    s3 = []
+    for i, j in itertools.zip_longest(s1, s2, fillvalue=0):
+        # print(i, j)
+        s3.append(i ^ j)
+    return ''.join(map(chr, s3))[::-1]
+
+
+def chunkenize_bytes(b: bytes,  size: int = 10):
+    ret = []
+    ma =  iceil(len(b)/ size) * size
+    for i in range(0, ma, size):
+        ret.append(b[i:i + size])
+    return ret
+
+
+def sti(s: str):
+    """string to list of int representing bytes"""
+    return list(map(int, bytes(s.encode('ascii'))))
+
+
+class RSA_OAEP():
     MIN_KEY_LENGTH = 1024
 
 
-    def __init__(self, l, k0, k1);
-        self.l = l
-        self.k0 = k0
-        self.k1 = k1
+    def G(m: str):
+        """"""
+
+
+    @staticmethod
+    def gen_l_k0_k1():
+        # Constraint: l + k0 + k1 < MIN_KEY_LENGTH
+        return 300, 400, 250
+
+    def __init__(self, l, k0, k1):
+        l, k0, k1 = RSA_OAEP.gen_l_k0_k1()
 
 
     def Gen(n):
@@ -247,7 +302,9 @@ class RSA_OAEP(n, l, k0, k1):
     def Enc(pk, m: str):
         N, e = pk
 
-    d = {}
-    N, e, d = GenRSA(n, dictionary=d)
-    pk = (N, e)
-    sk = (N, d)
+        d = {}
+        N, e, d = GenRSA(n, dictionary=d)
+        pk = (N, e)
+        sk = (N, d)
+
+

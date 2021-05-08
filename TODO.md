@@ -4,9 +4,13 @@
 - [x] pseudo-random prime generator (miller-rabin test)
 - [x] [GenModulus](./img/gen-modulus.png)
 - [x] [GenRSA](./img/gen-rsa.png)
-- [] [RSA-OAEP](./img/rsa-oaep.png)
-    - [] finish class constructor
+- [x] implementar operador `XOR` entre strings
+- [x] [OAEP](./img/rsa-oaep.png)
     - [x] Gen
-    - [] Enc
-    - [] Dec
+    - [x] Enc
+    - [x] Dec
 
+- [] Integrar RSA e OAEP
+    - [x] gerar hash de arquivo arbitrário (hashyfile)
+    - [] assinar hash de arquivo usando RSA-OAEP
+    - [] definir formato para salvar os items: chave módulo, assinatura do hash, conteúdo do arquivo
