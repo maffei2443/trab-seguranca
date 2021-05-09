@@ -2,54 +2,15 @@ import re
 import math
 import random
 
-def ipow(*args):
-    return int(pow(*args))
+from utils import xor, slice_lis, ipow
+from utils import gcd, iceil
 
+import hashlib as HH
+# from utils import hashfyle, binbin2bytes
 
-def load_primes(files=['primes/primes1.txt']):
-    primes = []
-    for fname in files:
-        s = open(fname).read()
-        s = s.split('edu')[1]
-        primes_str = re.findall(r'(\d+)', s)
-        primes.extend(map(int, primes_str))
-    return primes[500_000:]
+import utils
 
-PRIMES = load_primes()
-
-
-def gcd(a, b):
-    a, b = max(a,b), min(a,b)
-    while b:
-        a, b = b, a % b
-    return a
-
-
-def iceil(x):
-    return int(math.ceil(x))
-
-
-def ifloor(x):
-    return int(math.floor(x))
-
-
-def uplog(x):
-    return iceil(math.log2(x))
-
-
-def downlog(x):
-    return ifloor(math.log2(x))
-
-
-def fast_exp(base, e): 
-    res = 1 
-    while e: 
-        if e & 1: 
-            res *= base 
-        e >>= 1 
-        base *= base 
-    return res
-
+from collections import namedtuple
 
 # [2]
 def fast_mod_exp(base, e, mod): 
@@ -213,8 +174,8 @@ def GenRSA(n: int, tries=200, dictionary={}):
     # e = random.choice(PRIMES)
     while gcd(e, phi_n) > 1:
         e = random.randint(5000, 500_000)
-        print(e, phi_n)
-        input()
+        # print(e, phi_n)
+        # input()
     d = modInverse(e, phi_n)
 
 
@@ -270,41 +231,82 @@ def chunkenize_bytes(b: bytes,  size: int = 10):
     return ret
 
 
-def sti(s: str):
-    """string to list of int representing bytes"""
-    return list(map(int, bytes(s.encode('ascii'))))
+
+# utilizado
+def bytes_pow_mod(m, e, n):
+    return bytes([pow(i, e, n) for i in m])
 
 
-class RSA_OAEP():
-    MIN_KEY_LENGTH = 1024
-
-
-    def G(m: str):
-        """"""
-
+oaep = namedtuple('oaep_enc', 'X Y XY m r m_')
+class OAEP:
+    n = 1024
+    k0 = 512
+    k1 = 128
 
     @staticmethod
-    def gen_l_k0_k1():
-        # Constraint: l + k0 + k1 < MIN_KEY_LENGTH
-        return 300, 400, 250
+    def G(r: bytes):
+        return HH.sha3_512(r).digest()
 
-    def __init__(self, l, k0, k1):
-        l, k0, k1 = RSA_OAEP.gen_l_k0_k1()
+    @staticmethod
+    def H(X: bytes):
+        return HH.sha3_512(X).digest()
+
+    """Baseado na descrição da wikipedia"""
+    expected_len_m = (n - k0 - k1) // 8
+    
+    @staticmethod
+    def Enc(m: bytes):
+        
+        if len(m) != OAEP.expected_len_m:
+            raise ValueError(
+                f"`m` must by of length {OAEP.expected_len_m}, not {len(m)}"
+            )
+        # message is padded with k1 zeros to be (n - k0) bits
+        m_= m + bytes(OAEP.k1//8)
+        
+        # r is a randomly generated k0-bit string
+        r = utils.binbin2bytes(
+                utils.binstr2binbin(
+                        padded_bin_rep(
+                            random.getrandbits(OAEP.k0),
+                            OAEP.k0
+                        )
+                )
+        )
+        # print(type(r), r[:10], '...')
+        # G expands the k0 bits of `r` to (n - k0) bits
+        X = xor(m_, OAEP.G(r))
+        
+        # H reduces the (n-k0) bits of X to k0 bits
+        Y = xor(r, OAEP.H(X))
+        return oaep(
+            X=X, Y=Y, XY=X+Y, m=m, r=r, m_=m_
+        )
+    @staticmethod
+    def Dec(m: bytes):
+        X, Y = slice_lis(m, len(m)//2)
+        r = xor(Y, H(X))
+        m_ = xor(X, G(r))
+        m = m_[:-OAEP.k1//8]
+        return oaep(
+            X=X, Y=Y, XY=X+Y, m=m, r=r, m_=m_
+        )
 
 
-    def Gen(n):
-        dici = {}
-        N, e, d = GenRSA(n, dictionary=dici)
-        pk = (N, e)
-        sk = (N, d)
-        return pk, sk
+def SignFile(p: str, e: int, n: int = 1024):
+    fhash = utils.hashfyle(p)
 
-    def Enc(pk, m: str):
-        N, e = pk
+    # print("HASH_SIZE:", len(fhash))
+    fhash_oaep = OAEP.Enc(fhash)
+    # print("fhash_oaep:", fhash_oaep)
+    return fhash_oaep
+    fhash_cypher = core.bytes_pow_mod(fhash_oaep.XY, e, n)
+    with open(f'{p}.meta', 'w') as fp:
+        fp.write(f'e: {e}\n')
+        fp.write(f'n: {n}\n')
+        fp.write(f'hash_bytes: {len(fhash_cypher)}\n')
 
-        d = {}
-        N, e, d = GenRSA(n, dictionary=d)
-        pk = (N, e)
-        sk = (N, d)
-
-
+        
+    with open(f'{p}.signed', 'wb') as fp:
+        fp.write(fhash_cypher)
+    return (f'{p}.meta', f'{p}.signed')
