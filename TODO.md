@@ -16,3 +16,4 @@
     - [+-] definir formato para salvar os items: 
       chave módulo, assinatura do hash, conteúdo do arquivo
         - [] faltou salvar a chave do módulo. IDEIA: salvar em arquivo .txt separadamente
+- [x] modularizar e refatorar

@@ -12,29 +12,6 @@ import utils
 
 from collections import namedtuple
 
-# [2]
-def fast_mod_exp(base, e, mod): 
-    res = 1
-    base %= mod
-    while e: 
-        if e & 1: 
-            res = (res * base) % mod
-        e >>= 1 
-        base = (base * base) % mod
-    return res
-
-
-# MathStackExchange
-def is_perfect_power(n: int):
-    bmax = iceil(math.log2(n))
-    for n_root in range(2, bmax+1):
-        root = pow(n , 1/n_root)
-        down, up = math.floor(root), math.ceil(root)
-        if ipow(down, n_root) == n:
-            return True
-        elif ipow(up, n_root) == n:
-            return True
-    return False
 
 
 def powers_of_two_divisors(n):
@@ -48,18 +25,6 @@ def powers_of_two_divisors(n):
         t += 1
         n >>= 1
     return range(1, t)
-
-
-def gt_powers_of_two_divisor(n):
-    """Generates iterator from 1 to k such that k is the biggest
-        integer satisfying n % (2^k) = 0.
-        """
-
-    t = 1
-    while not n & 1:
-        t += 1
-        n >>= 1
-    return t
 
 
 # Implementation of pseudocode at [4]
@@ -151,13 +116,6 @@ def gen_n_bits_prime(n: int, s: int = 200):
 
 
 
-        
-def get_coprime(supposed_prime, candidates):
-    for c in candidates:
-        if gcd(c, supposed_prime) == 1:
-            return c
-    return -1
-
 
 def GenModulus(n: int, miller_rabin_tries=200):
     p = gen_n_bits_prime(n, miller_rabin_tries)
@@ -188,67 +146,3 @@ def GenRSA(n: int, tries=200, dictionary={}):
     return N, e, d
 
 
-def padded_bin_rep(n: int, pad = 8):
-    if n == 0:
-        return pad * '0'
-    n_rep = bin(n)[2:]
-    dt = pad - iceil(math.log2(int(f'0b{n_rep}', 2)))
-    return dt*'0' + str(n_rep)
-
-
-
-# utilizado
-def bytes_pow_mod(m, e, n):
-    return bytes([pow(i, e, n) for i in m])
-
-
-
-def SignFile(p: str, ):
-    fhash = utils.hashfyle(p)
-    fhash_oaep = OAEP.Enc(fhash)
-    return fhash_oaep
-
-
-class RSA_OAEP:
-    @staticmethod
-    def _dump_signated_file(path, signature):
-        with open(f'{path}.signed', 'wb') as fp:
-            fp.write( (signature).to_bytes(1024, byteorder='big') )
-            fp.write( open(path, 'rb').read() )
-
-
-    @staticmethod
-    def Enc(p: str, rabin_tries=500):
-        di = {}
-        N, d, e = GenRSA(1024, rabin_tries, di)
-        fhash = utils.hashfyle(p)
-
-        fhash_oaep = SignFile(p, )
-        
-        XY=fhash_oaep.XY
-        LXY = list(XY)
-        XY_ASSTR=''.join(map(padded_bin_rep, LXY))
-        XY_INT=utils.bin2int(XY_ASSTR)
-        L = len(XY)   
-        sign = pow(XY_INT, di['d'], di['n'])
-        message = XY_INT
-        return message, sign, di
-
-    def CheckFileSignature(p, e, n):
-        with open(p,  'rb') as fp:
-            sign = int.from_bytes(fp.read(1024), byteorder='big',)
-
-            _vrfy = pow(sign, e, n)
-            
-            file_hash=utils.hashfybyte(fp.read())
-
-            file_hash_padded=OAEP.Enc(file_hash)
-
-            if _vrfy == file_hash_padded:
-                return True
-            else:
-                return False
-
-
-        
-    
