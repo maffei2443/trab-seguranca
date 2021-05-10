@@ -1,47 +1,9 @@
-#!/usr/bin/env python
-# coding: utf-8
 
-# Imporando o qeue precisa, e definindo variáveis necessárias...
-
-# In[1]:
-
-
-p = 'dodf.pdf'
-import core
 import utils
-import OAEP
-from importlib import reload as rl
 import hashlib as HH
 
-# In[2]:
-
-
-# file = open(p, 'rb').read()
-
-# In[7]:
-
-class RSA:
-    def __init__(self):
-        self.di = {}
-        self.nde = core.GenRSA(1024, dictionary=self.di)
-
-
-    def Enc(self, m):
-        if isinstance(m, bytes):
-            m = int.from_bytes(m, byteorder='big')
-        N, d, e = self.nde
-        c = pow(m, d, N)
-        return c
-
-
-    def Dec(self, c):
-        if isinstance(c, bytes):
-            c = int.from_bytes(c, byteorder='big')
-
-        N, d, e = self.nde
-        m = pow(c, e, N)
-        return m
-    
+import RSA
+import OAEP
 
 
 class RSA_OAEP:
@@ -62,10 +24,11 @@ class RSA_OAEP:
             fhash = HH.sha3_384(fp.read()).digest()
         return sign, fhash
 
+
     @staticmethod
     def Sign(p, rsa=None):
         if rsa == None:
-            rsa = RSA()
+            rsa = RSA.RSA()
         # Cria hash dp arquivo
         m = utils.hashfyle(p)
         # Faz padding do hash
@@ -102,3 +65,5 @@ class RSA_OAEP:
         # vrfy = checker(sign)
         # fhash_recovered = OAEP.OAEP.Dec(vrfy.to_bytes(48, ))
         # return fhash, fhash_recovered
+
+
