@@ -9,18 +9,6 @@ def ipow(*args):
     return int(pow(*args))
 
 
-def load_primes(files=['primes/primes1.txt']):
-    primes = []
-    for fname in files:
-        s = open(fname).read()
-        s = s.split('edu')[1]
-        primes_str = re.findall(r'(\d+)', s)
-        primes.extend(map(int, primes_str))
-    return primes[500_000:]
-
-PRIMES = load_primes()
-
-
 def gcd(a, b):
     a, b = max(a,b), min(a,b)
     while b:
