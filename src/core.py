@@ -189,46 +189,11 @@ def GenRSA(n: int, tries=200, dictionary={}):
 
 
 def padded_bin_rep(n: int, pad = 8):
+    if n == 0:
+        return pad * '0'
     n_rep = bin(n)[2:]
     dt = pad - iceil(math.log2(int(f'0b{n_rep}', 2)))
     return dt*'0' + str(n_rep)
-
-
-def pad_message(m: str, max_len: int = 128):
-    delta = max_len - len(m)
-    if delta < 0:
-         raise ValueError(
-            f"`m` must have length less than or equal {max_len}"
-        )  
-    else:
-        return m + delta * chr(0)
-
-
-def XOR_str(s1: str, s2: str):
-    """Implements s1 ^ s2, padding to the left the smaller string.
-
-    Args:
-        s1 (str): [description]
-        s2 (str): [description]
-
-    Returns:
-        [type]: [description]
-    """
-    s1 = s1[::-1].encode('ascii')
-    s2 = s2[::-1].encode('ascii')
-    s3 = []
-    for i, j in itertools.zip_longest(s1, s2, fillvalue=0):
-        # print(i, j)
-        s3.append(i ^ j)
-    return ''.join(map(chr, s3))[::-1]
-
-
-def chunkenize_bytes(b: bytes,  size: int = 10):
-    ret = []
-    ma =  iceil(len(b)/ size) * size
-    for i in range(0, ma, size):
-        ret.append(b[i:i + size])
-    return ret
 
 
 
@@ -265,14 +230,17 @@ class OAEP:
         m_= m + bytes(OAEP.k1//8)
         
         # r is a randomly generated k0-bit string
-        r = utils.binbin2bytes(
-                utils.binstr2binbin(
-                        padded_bin_rep(
-                            random.getrandbits(OAEP.k0),
-                            OAEP.k0
-                        )
-                )
-        )
+        randbits = random.getrandbits(OAEP.k0)
+
+        # r = utils.binbin2bytes(
+        #         utils.binstr2binbin(
+        #                 padded_bin_rep(
+        #                     randbits,
+        #                     OAEP.k0
+        #                 )
+        #         )
+        # )
+        r = randbits.to_bytes(OAEP.k0 // 8, byteorder='big')
         # print(type(r), r[:10], '...')
         # G expands the k0 bits of `r` to (n - k0) bits
         X = xor(m_, OAEP.G(r))
@@ -293,20 +261,52 @@ class OAEP:
         )
 
 
-def SignFile(p: str, e: int, n: int = 1024):
+def SignFile(p: str, ):
     fhash = utils.hashfyle(p)
-
-    # print("HASH_SIZE:", len(fhash))
     fhash_oaep = OAEP.Enc(fhash)
-    # print("fhash_oaep:", fhash_oaep)
     return fhash_oaep
-    fhash_cypher = core.bytes_pow_mod(fhash_oaep.XY, e, n)
-    with open(f'{p}.meta', 'w') as fp:
-        fp.write(f'e: {e}\n')
-        fp.write(f'n: {n}\n')
-        fp.write(f'hash_bytes: {len(fhash_cypher)}\n')
+
+
+class RSA_OAEP:
+    @staticmethod
+    def _dump_signated_file(path, signature):
+        with open(f'{path}.signed', 'wb') as fp:
+            fp.write( (signature).to_bytes(1024, byteorder='big') )
+            fp.write( open(path, 'rb').read() )
+
+
+    @staticmethod
+    def Enc(p: str, rabin_tries=500):
+        di = {}
+        N, d, e = GenRSA(1024, rabin_tries, di)
+        fhash = utils.hashfyle(p)
+
+        fhash_oaep = SignFile(p, )
+        
+        XY=fhash_oaep.XY
+        LXY = list(XY)
+        XY_ASSTR=''.join(map(padded_bin_rep, LXY))
+        XY_INT=utils.bin2int(XY_ASSTR)
+        L = len(XY)   
+        sign = pow(XY_INT, di['d'], di['n'])
+        message = XY_INT
+        return message, sign, di
+
+    def CheckFileSignature(p, e, n):
+        with open(p,  'rb') as fp:
+            sign = int.from_bytes(fp.read(1024), byteorder='big',)
+
+            _vrfy = pow(sign, e, n)
+            
+            file_hash=utils.hashfybyte(fp.read())
+
+            file_hash_padded=OAEP.Enc(file_hash)
+
+            if _vrfy == file_hash_padded:
+                return True
+            else:
+                return False
+
 
         
-    with open(f'{p}.signed', 'wb') as fp:
-        fp.write(fhash_cypher)
-    return (f'{p}.meta', f'{p}.signed')
+    

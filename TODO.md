@@ -12,5 +12,7 @@
 
 - [] Integrar RSA e OAEP
     - [x] gerar hash de arquivo arbitrário (hashyfile)
-    - [] assinar hash de arquivo usando RSA-OAEP
-    - [] definir formato para salvar os items: chave módulo, assinatura do hash, conteúdo do arquivo
+    - [x] assinar hash de arquivo usando RSA-OAEP
+    - [+-] definir formato para salvar os items: 
+      chave módulo, assinatura do hash, conteúdo do arquivo
+        - [] faltou salvar a chave do módulo. IDEIA: salvar em arquivo .txt separadamente

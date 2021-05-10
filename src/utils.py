@@ -79,6 +79,10 @@ def hashfyle(p: str):
     return H.sha3_384(open(p,'rb').read()).digest()
 
 
+def hashfybyte(b: bytes):
+    return H.sha3_384(b).digest()
+
+
 from typing import Union
 
 def binstr2int(binAsStr):
